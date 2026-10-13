@@ -110,6 +110,8 @@ describe('End Run and what happens next', () => {
   })
 
   it('End Shift starts a Handover on the line that the incoming technician stops with Start Run', async () => {
+    const reportPrompt = vi.fn()
+    window.addEventListener('pulse-shift-complete', reportPrompt)
     vi.mocked(hmiApi.startLineStoppage).mockResolvedValue(stoppage({ kind: 'handover' }))
     await endRun()
 
@@ -120,6 +122,8 @@ describe('End Run and what happens next', () => {
     expect(line).toBe('Rovema')
     expect(payload).toEqual({ kind: 'handover', started_by: 'Liam', reason: null })
     expect(key).toMatch(/^k-/)
+    expect(reportPrompt).toHaveBeenCalledTimes(1)
+    window.removeEventListener('pulse-shift-complete', reportPrompt)
     expect(screen.getByText(/handed over by liam/i)).toBeInTheDocument()
     expect(screen.getByText(/not charged to either run/i)).toBeInTheDocument()
     // Nothing to end here: only the incoming run stops it.

@@ -496,6 +496,7 @@ export function HmiScreen() {
         setActiveStoppage(stoppageFromResponse(response))
         setStoppageError(null)
         setScreen('lineStoppage')
+        if (kind === 'handover') window.dispatchEvent(new CustomEvent('pulse-shift-complete', { detail: { line: endedRun.productionLine, finishedAt: endedRun.finishedAt } }))
         void refreshLineState()
       })
       .catch((error: unknown) =>

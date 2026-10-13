@@ -1,0 +1,52 @@
+[
+  {
+    "report": "linetech",
+    "pdf_pages": 2,
+    "report_id_each_page": true,
+    "png_bytes": 331465
+  },
+  {
+    "report": "engineering",
+    "pdf_pages": 2,
+    "report_id_each_page": true,
+    "png_bytes": 344058
+  },
+  {
+    "report": "management",
+    "pdf_pages": 3,
+    "report_id_each_page": true,
+    "png_bytes": 431371
+  },
+  {
+    "report": "long-table",
+    "pdf_pages": 7,
+    "records_preserved": 80
+  },
+  {
+    "viewport": "desktop",
+    "horizontal_overflow": false,
+    "templates": 3,
+    "pdf_download": "passed",
+    "png_download": "passed",
+    "share_fallback": "passed",
+    "browser_errors": []
+  },
+  {
+    "viewport": "tablet",
+    "horizontal_overflow": false,
+    "templates": 3,
+    "pdf_download": "passed",
+    "png_download": "passed",
+    "share_fallback": "passed",
+    "browser_errors": []
+  },
+  {
+    "viewport": "mobile",
+    "horizontal_overflow": false,
+    "templates": 3,
+    "pdf_download": "passed",
+    "png_download": "passed",
+    "share_fallback": "passed",
+    "browser_errors": []
+  }
+]

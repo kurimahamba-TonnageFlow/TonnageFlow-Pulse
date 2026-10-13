@@ -109,4 +109,6 @@ from .live_dashboard_api import router as live_dashboard_router
 app.include_router(live_dashboard_router)
 from .intelligence_api import router as intelligence_router
 app.include_router(intelligence_router)
+from .reports_api import router as reports_router
+app.include_router(reports_router)
 app.mount("/", whatsapp_app)

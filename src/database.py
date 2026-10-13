@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from dataclasses import dataclass
 import os
 import json
@@ -104,7 +105,8 @@ def check_schema_readiness():
              AND EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='immutable_task_observation' AND NOT tgisinternal)) AS tasks,
             to_regprocedure('public.resolve_production_standard(text,numeric,text,text,integer,integer,timestamp with time zone)') IS NOT NULL AS line_weight_standard,
             EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='changeovers' AND column_name='workflow') AS linetech,
-            (EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='weekly_tonnage_targets' AND column_name='notes') AND EXISTS (SELECT 1 FROM pg_constraint WHERE conname='no_overlapping_site_target_weeks')) AS live_operations;
+            (EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='weekly_tonnage_targets' AND column_name='notes') AND EXISTS (SELECT 1 FROM pg_constraint WHERE conname='no_overlapping_site_target_weeks')) AS live_operations,
+            to_regclass('public.shift_report_snapshots') IS NOT NULL AS shift_reports;
     """
 
     with psycopg.connect(DATABASE_URL, connect_timeout=5) as connection:
@@ -123,6 +125,7 @@ def check_schema_readiness():
         "20261005135527": bool(row.get("management_standard")),
         "20261006021758": bool(row.get("tasks")),
         "20261008232014": bool(row.get("line_weight_standard")),
+        "20261012232758": bool(row.get("shift_reports")),
         "20261009110303": bool(row.get("linetech")),
         "20261009131928": bool(row.get("live_operations")),
     }
@@ -2138,7 +2141,7 @@ def get_downtime_event_by_id(downtime_event_id):
             return cursor.fetchone()
 
 
-def get_engineering_repair_updates(downtime_event_ids):
+def get_engineering_repair_updates(downtime_event_ids, *, connection=None):
     """Repair-update history for a specific set of downtime_events rows,
     including the Stage 5A repair_classification / Machine Setting /
     created_at columns. Kept separate from
@@ -2170,19 +2173,20 @@ def get_engineering_repair_updates(downtime_event_ids):
         ORDER BY eu.downtime_event_id, eu.id;
     """
 
-    with get_database_connection() as connection:
+    with (nullcontext(connection) if connection is not None else get_database_connection()) as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(query, {"downtime_event_ids": list(downtime_event_ids)})
             return cursor.fetchall()
 
 
-def get_engineering_faults(filters=None):
+def get_engineering_faults(filters=None, *, connection=None):
     """Open + resolved faults for the Engineering API, with nested
     repair_updates. Reuses _fault_conditions() (the same filter builder
     get_dashboard_faults() uses) rather than duplicating its
     business rules; adds accepted_at (new Stage 5A column) and omits
     fields the Engineering brief did not ask for (engineer_called,
     retrospective) to avoid exposing unrelated internal data."""
+    supplied_connection = connection
     conditions, params = _fault_conditions(filters)
     # This endpoint filters engineering work, not production downtime.
     conditions = [c.replace("de.production_status =", "de.engineering_status =") for c in conditions]
@@ -2215,13 +2219,13 @@ def get_engineering_faults(filters=None):
         ORDER BY de.opened_at DESC;
     """
 
-    with get_database_connection() as connection:
+    with (nullcontext(connection) if connection is not None else get_database_connection()) as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
     updates_by_fault = {}
-    for update in get_engineering_repair_updates([row["downtime_event_id"] for row in rows]):
+    for update in get_engineering_repair_updates([row["downtime_event_id"] for row in rows], connection=supplied_connection):
         updates_by_fault.setdefault(update["downtime_event_id"], []).append(update)
 
     for row in rows:
@@ -4716,7 +4720,7 @@ def get_run_hour_readings(production_run_id):
             return {"run": run, "readings": readings}
 
 
-def get_hourly_report_data(window_start, window_end, production_line=None):
+def get_hourly_report_data(window_start, window_end, production_line=None, *, connection=None):
     """Everything the fixed-hour Production view needs for one shift,
     in one connection: runs open in the window with their speed changes
     and readings, their planned stops, every fault on the lines (by
@@ -4726,7 +4730,7 @@ def get_hourly_report_data(window_start, window_end, production_line=None):
     stop_line_filter = "AND ls.production_line = %(production_line)s" if production_line else ""
     params = {"window_start": window_start, "window_end": window_end, "production_line": production_line}
 
-    with get_database_connection() as connection:
+    with (nullcontext(connection) if connection is not None else get_database_connection()) as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 "SELECT name FROM public.production_lines WHERE active = TRUE ORDER BY display_order, name;"
@@ -4981,7 +4985,7 @@ def upsert_weekly_targets(week_start, targets, set_by):
 # ----------------------------------------------------------
 
 
-def get_dashboard_window_data(window_start, window_end, production_line=None, shift_based=False):
+def get_dashboard_window_data(window_start, window_end, production_line=None, shift_based=False, *, connection=None):
     """Everything the window-based dashboard calculations need, in one
     connection.
 
@@ -5017,7 +5021,7 @@ def get_dashboard_window_data(window_start, window_end, production_line=None, sh
         else "hu.period_ended_at > %(window_start)s AND hu.period_ended_at <= %(window_end)s"
     )
 
-    with get_database_connection() as connection:
+    with (nullcontext(connection) if connection is not None else get_database_connection()) as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
                 """

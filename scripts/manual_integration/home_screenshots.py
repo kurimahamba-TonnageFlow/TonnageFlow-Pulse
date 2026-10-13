@@ -22,7 +22,7 @@ def main():
             page.get_by_text('API unavailable',exact=True).wait_for()
             page.screenshot(path=str(OUTPUT/f'{name}.png'),full_page=True)
             assert page.evaluate('document.documentElement.scrollWidth') <= width
-            for title in ['Warehouse','Cleaning Plant','Reports','Settings']:
+            for title in ['Warehouse','Cleaning Plant','Settings']:
                 trigger=page.get_by_role('button',name=title,exact=True).first
                 trigger.click()
                 modal=page.get_by_role('dialog',name=title)
@@ -38,7 +38,7 @@ def main():
             page.get_by_role('searchbox').fill('QA')
             assert page.get_by_role('region',name='All Destinations').get_by_role('link',name='QA',exact=True).is_visible()
             page.get_by_role('searchbox').fill('')
-            for label in ['Production','QA','Performance','Operational Intelligence','Management']:
+            for label in ['Production','QA','Performance','Operational Intelligence','Management','Reports']:
                 page.get_by_role('link',name=label,exact=True).first.click()
                 page.get_by_role('heading',name='Management sign in',exact=False).wait_for()
                 assert '/management' in page.url

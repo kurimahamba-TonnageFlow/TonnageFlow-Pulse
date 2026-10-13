@@ -1,3 +1,4 @@
+import { ReportLauncher } from '../reports/ReportsPanel'
 import { useEngineeringWrites } from './recovery'
 import { RecoveryPanel } from './RecoveryPanel'
 import { CasepackerQueue } from './CasepackerQueue'
@@ -201,6 +202,7 @@ export function Workspace({ token, engineerName, onLogout, onSessionExpired }: W
 
   return (
     <div className="engineering-screen engineering-workspace">
+      <ReportLauncher token={token} initialType="engineering" />
       <header className="engineering-workspace__header">
         <div>
           <p className="engineering-workspace__brand">Tonnage Flow Pulse — Engineering</p>

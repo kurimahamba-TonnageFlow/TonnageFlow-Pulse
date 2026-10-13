@@ -1,0 +1,9 @@
+{
+  "optional_end_shift_prompt": "passed",
+  "not_now_report_requests": 0,
+  "night_boundary_context": "passed",
+  "engineering_template_access": "passed",
+  "production_write_requests": 0,
+  "browser_errors": [],
+  "note": "Synthetic event exercises the real prompt; HmiScreen.changeover.test.tsx verifies the successful handover dispatch."
+}

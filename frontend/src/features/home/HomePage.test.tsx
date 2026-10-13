@@ -43,7 +43,7 @@ describe('Home navigation hub', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Browser back' }))
     expect(screen.getByRole('heading', { name: 'Welcome to TonnageFlow Pulse' })).toBeInTheDocument()
   })
-  it.each(['Warehouse', 'Cleaning Plant', 'Reports', 'Settings'])('%s opens a notice without navigating', (name) => {
+  it.each(['Warehouse', 'Cleaning Plant', 'Settings'])('%s opens a notice without navigating', (name) => {
     open(); fireEvent.click(screen.getAllByRole('button', { name })[0])
     expect(screen.getByRole('dialog', { name })).toBeInTheDocument()
     expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/)

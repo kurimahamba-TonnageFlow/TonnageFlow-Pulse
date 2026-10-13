@@ -12,6 +12,7 @@ interface ManagementCard {
 
 /** Descriptions of each area - no figures, counts or statuses here. */
 const CARDS: ManagementCard[] = [
+  { title: 'Shift reports', description: 'Generate, retrieve and export shift and 24-hour reports.', state: 'open', to: '/management/reports' },
   {title: 'Production standards', description: 'Versioned speed standards for new runs, with management approval history.', state: 'open', to: '/management/production-standards'},
   {
     title: 'Production dashboard',

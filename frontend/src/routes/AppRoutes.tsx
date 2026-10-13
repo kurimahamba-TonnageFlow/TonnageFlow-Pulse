@@ -1,3 +1,4 @@
+import { ReportsPage } from '../pages/ReportsPage'
 import { HomePage } from '../features/home/HomePage'
 import { WeeklyTargets } from '../features/management/WeeklyTargets'
 import { LineTechSetup } from '../features/management/LineTechSetup'
@@ -25,6 +26,7 @@ export function AppRoutes() {
       <Route element={<ManagementSessionRoot />}>
         <Route path="/" element={<HomePage />} />
         <Route element={<ManagementLayout />}>
+          <Route path="/management/reports" element={<RequireManagementSession><ReportsPage /></RequireManagementSession>} />
           <Route path="/management/weekly-targets" element={<RequireManagementSession><WeeklyTargets /></RequireManagementSession>} />
           <Route path="/management/linetech" element={<RequireManagementSession><LineTechSetup /></RequireManagementSession>} />
           <Route path="/management" element={<ManagementPage />} />

@@ -100,7 +100,7 @@ describe('Management sign-in', () => {
     expect(submit).toBeEnabled()
   })
 
-  it('signs in, sends the trimmed name, and shows the Management home with its six areas', async () => {
+  it('signs in, sends the trimmed name, and shows the Management home with its seven areas', async () => {
     vi.mocked(managementApi.login).mockResolvedValue(LOGIN_SUCCESS)
     renderAt('/management')
 
@@ -124,7 +124,7 @@ describe('Management sign-in', () => {
       expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
     }
     const cards = screen.getAllByRole('listitem')
-    expect(cards).toHaveLength(6)
+    expect(cards).toHaveLength(7)
 
     // Working areas: visibly "Open" and real links to real routes.
     expect(screen.getByRole('link', { name: /production dashboard/i })).toHaveAttribute('href', '/dashboard')
@@ -133,7 +133,7 @@ describe('Management sign-in', () => {
       '/management/performance',
     )
     expect(screen.getByRole('link', { name: /active runs/i })).toHaveAttribute('href', '/management/active-runs')
-    expect(screen.getAllByText('Open', { exact: true })).toHaveLength(6)
+    expect(screen.getAllByText('Open', { exact: true })).toHaveLength(7)
     expect(screen.getByRole('link', {name:/factory setup/i})).toHaveAttribute('href','/management/linetech')
     expect(screen.getByRole('link', {name:/production standards/i})).toHaveAttribute('href','/management/production-standards')
 
