@@ -28,7 +28,7 @@ def reporting_start(now, targets):
 
 def load_snapshot(now, week_start=None):
     """A fixed number of bulk queries, one read-only repeatable-read snapshot."""
-    recent=clock_hour_start(now)-timedelta(hours=8)
+    recent=min(clock_hour_start(now)-timedelta(hours=8), current_shift_window(now).start)
     seven=now-timedelta(days=7)
     with db.get_database_connection() as connection:
         with connection.cursor(row_factory=db.dict_row) as c:
@@ -157,18 +157,19 @@ def current_line(data,line,now):
 
 
 def build_snapshot(data,week,now):
-    end=clock_hour_start(now);start=end-timedelta(hours=8)
-    window=TimeWindow('last_eight_hours','Last eight completed clock hours',start,end)
+    shift=current_shift_window(now)
+    end=clock_hour_start(now);start=min(shift.start,end-timedelta(hours=2))
+    window=TimeWindow('completed_hours','Completed clock hours',start,end)
     report=hourly_reports.build_hourly_report(data,window,now)
     by_line={l['production_line']:l for l in report['lines']}
     lines=[]
     for name in data['lines']:
         state=current_line(data,name,now)
         slots=by_line[name]['hours']
-        state.update(last_hour=slots[-1] if slots else None,trend=slots)
+        state.update(last_hour=slots[-1] if slots else None,trend=[h for h in slots if h['hour_start']>=shift.start])
         lines.append(state)
     def average(index):
-        values=[(l['name'],l['trend'][index]['line']) for l in lines if len(l['trend'])>=abs(index)]
+        values=[(name,l['hours'][index]['line']) for name,l in by_line.items() if len(l['hours'])>=abs(index)]
         eligible=[(name,v) for name,v in values if v['output_vs_target_percent'] is not None and v['status'] in ('reported','stopped') and v['unaccounted_minutes']==0]
         total_target=sum((calc.to_decimal(v['target_packs']) for _,v in eligible),calc.ZERO)
         total_actual=sum((calc.to_decimal(v['actual_packs']) for _,v in eligible),calc.ZERO)

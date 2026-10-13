@@ -1,7 +1,7 @@
 import {act,cleanup,fireEvent,render,screen,within,waitFor} from '@testing-library/react'
 import {MemoryRouter} from 'react-router-dom'
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest'
-import {LiveOperations,LiveOperationsView} from './LiveOperations'
+import {LiveOperations,LiveOperationsView,Trend} from './LiveOperations'
 import {WeeklyTargets} from '../management/WeeklyTargets'
 import {getLive,saveLiveTarget} from './api'
 import type {LiveSnapshot} from './liveTypes'
@@ -84,5 +84,27 @@ describe('Weekly target management',()=>{
   fireEvent.click(screen.getByRole('button',{name:'Save weekly target'}))
   expect(await screen.findByRole('status')).toHaveTextContent('overlaps')
   expect(screen.getByLabelText('Target tonnes')).toHaveValue(120)
+ })
+})
+
+
+describe('Current shift chart',()=>{
+ it('shows the entire night and leaves unfinished hours blank',()=>{
+  const shift={...normal().shift,label:'Night shift 2026-10-12',start:'2026-10-12T21:00:00Z',end:'2026-10-13T05:00:00Z'}
+  const hour=structuredClone(normal().lines[0].last_hour!)
+  hour.hour_start=shift.start;hour.line.output_vs_target_percent=0
+  const {container,rerender}=render(<Trend hours={[hour]} shift={shift}/>)
+  expect(screen.getByText(/Night shift.*22:00–06:00/)).toBeInTheDocument()
+  expect(container.querySelectorAll('.lo-trend-labels span')).toHaveLength(8)
+  expect(screen.getByText('22:00–23:00: 0.0%',{selector:'li'})).toBeInTheDocument()
+  expect(screen.getByText('05:00–06:00: Awaiting completed hour')).toBeInTheDocument()
+  expect(container.querySelectorAll('circle')).toHaveLength(1)
+  rerender(<Trend hours={[]} shift={{...shift,label:'Day shift',start:shift.end,end:'2026-10-13T13:00:00Z'}}/>)
+  expect(screen.getByText(/Day shift.*06:00–14:00/)).toBeInTheDocument()
+  expect(container.querySelectorAll('circle')).toHaveLength(0)
+ })
+ it('retains both repeated UK hours when clocks go back',()=>{
+  const {container}=render(<Trend hours={[]} shift={{...normal().shift,label:'Night shift',start:'2026-10-24T21:00:00Z',end:'2026-10-25T06:00:00Z'}}/>)
+  expect(container.querySelectorAll('.lo-trend-labels span')).toHaveLength(9)
  })
 })

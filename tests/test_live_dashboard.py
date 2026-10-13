@@ -141,3 +141,22 @@ def test_authenticated_snapshot_serializes_the_real_response_model(monkeypatch):
         assert response.json()['lines'][0]['last_hour']['line']['actual_packs']==3000
         assert response.json()['weekly']['actual_tonnes']==3
     finally:app.dependency_overrides.pop(management_auth.require_management_session,None)
+
+
+@pytest.mark.parametrize('moment,shift_name,completed', [
+    ('2026-10-13T01:20:00+00:00', 'Night', 4),
+    ('2026-10-13T05:00:00+00:00', 'Day', 0),
+    ('2026-10-13T13:00:00+00:00', 'Afternoon', 0),
+    ('2026-10-13T21:00:00+00:00', 'Night', 0),
+    ('2026-10-25T05:30:00+00:00', 'Night', 8),
+    ('2026-03-29T04:30:00+00:00', 'Night', 6),
+])
+def test_trend_only_contains_completed_hours_in_current_uk_shift(moment, shift_name, completed):
+    now = datetime.fromisoformat(moment)
+    result = live.build_snapshot(fixture(), live.reporting_week(now.date()), now)
+    shift = live.current_shift_window(now)
+    assert shift_name in result['shift']['label']
+    for line in result['lines']:
+        assert len(line['trend']) == completed
+        assert all(shift.start <= h['hour_start'] < shift.end and h['hour_end'] <= now for h in line['trend'])
+        assert line['last_hour']['hour_end'] == live.clock_hour_start(now)
