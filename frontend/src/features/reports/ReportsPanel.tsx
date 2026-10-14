@@ -78,7 +78,7 @@ export function ReportsPanel({ token, initialType = 'linetech', context, onClose
       const response = await fetch(joinUrl(import.meta.env.VITE_API_BASE_URL ?? '', `/api/v1/reports/${saved.id}/export/${format}`), { headers })
       if (!response.ok) throw new Error('Export unavailable. Your saved report is safe. Please retry.')
       const blob = await response.blob(); const file = new File([blob], `pulse-${saved.type}-${saved.id}.${format}`, { type: blob.type })
-      if (share && navigator.canShare?.({ files: [file] })) {
+      if (share && navigator.share && navigator.canShare?.({ files: [file] })) {
         try { await navigator.share({ files: [file], title: NAMES[saved.type] }); return }
         catch (e) { if (e instanceof DOMException && e.name === 'AbortError') return }
       }
@@ -99,8 +99,9 @@ export function ReportsPanel({ token, initialType = 'linetech', context, onClose
       {mode === 'shift' && <label>Shift<select value={shift} onChange={(e) => setShift(e.target.value)}><option value="Day">Day 06:00 - 14:00</option><option value="Afternoon">Evening 14:00 - 22:00</option><option value="Night">Night 22:00 - 06:00</option></select></label>}
       <label>Optional handover note<textarea maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} /></label>
     </div><button onClick={() => void generate()}>{busy ? 'Generating...' : 'Generate Report'}</button></fieldset>
-    <div className="pulse-reports__actions" aria-live="polite">{busy && <span>Working...</span>}{saved && <><button disabled={busy} onClick={() => void download('pdf')}>Download PDF</button><button disabled={busy} onClick={() => void download('png')}>Save as Image</button><button disabled={busy} onClick={() => void download('png', true)}>Share image</button><button disabled={busy} onClick={() => void generate(true)}>Generate revised report</button><button disabled={busy} onClick={() => void retrieve(saved.id)}>Reload preview</button><span>Version {saved.version} | {saved.id}</span></>}</div>
+    <div className="pulse-reports__actions" aria-live="polite">{busy && <span>Working...</span>}{saved && <><button disabled={busy} onClick={() => void download('pdf')}>Download PDF</button><button disabled={busy} onClick={() => void download('png')}>Save as Image</button><button className="pulse-reports__share" disabled={busy} onClick={() => void download('png', true)}>Share report</button><button disabled={busy} onClick={() => void generate(true)}>Generate revised report</button><button disabled={busy} onClick={() => void retrieve(saved.id)}>Reload preview</button><span>Version {saved.version} | {saved.id}</span></>}</div>
     {html && <iframe className="pulse-reports__preview" title="Shift report preview" sandbox="" srcDoc={html} />}
+    {saved && html && <div className="pulse-reports__actions" aria-label="Share generated report"><button className="pulse-reports__share" disabled={busy} onClick={() => void download('png', true)}>Share report</button><p>Share the report as an image using your device's sharing options, or download it to attach.</p></div>}
     <h2>Saved report history</h2><p>Saved reports available to your credentials, newest first.</p><ul>{history.map((r) => <li key={r.id}><button disabled={busy} onClick={() => void retrieve(r.id)}>{NAMES[r.report_type]} | {r.production_line} | {new Date(r.generated_at).toLocaleString('en-GB')} | v{r.version}</button></li>)}</ul>{hasMore && <button disabled={busy} onClick={() => void loadMore()}>Load older reports</button>}
   </section>
 }

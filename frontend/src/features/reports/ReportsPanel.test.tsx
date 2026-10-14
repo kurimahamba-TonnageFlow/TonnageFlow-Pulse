@@ -14,7 +14,7 @@ beforeEach(() => {
   })
   vi.mocked(apiClient.post).mockResolvedValue(saved)
 })
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 it('offers only server-authorised templates and keeps the preview sandboxed', async () => {
   render(<ReportsPanel />)
   await waitFor(() => expect(screen.getByText('Generate Report')).not.toBeDisabled())
@@ -63,4 +63,31 @@ it('End Shift uses the completed overnight shift at the 06:00 boundary', async (
   expect(screen.getByLabelText('Shift')).toHaveValue('Night')
   expect(screen.getByLabelText('Shift start date')).toHaveValue('2026-01-11')
   expect(screen.getByLabelText('Production line')).toHaveValue('Rovema')
+})
+
+
+it.each(['native', 'fallback', 'cancel'])('shares the saved report safely: %s', async (mode) => {
+  const share = vi.fn().mockImplementation(async () => { if (mode === 'cancel') throw new DOMException('Cancelled', 'AbortError') })
+  vi.stubGlobal('navigator', { ...navigator, canShare: () => mode !== 'fallback', share })
+  const fetchExport = vi.fn().mockResolvedValue({ ok: true, blob: async () => new Blob(['image'], { type: 'image/png' }) })
+  vi.stubGlobal('fetch', fetchExport)
+  vi.stubGlobal('URL', { createObjectURL: vi.fn(() => 'blob:report'), revokeObjectURL: vi.fn() })
+  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+  render(<ReportsPanel token="manager-token" />)
+  await waitFor(() => expect(screen.getByText('Generate Report')).not.toBeDisabled())
+  fireEvent.click(screen.getByText('Generate Report'))
+  await screen.findByTitle('Shift report preview')
+  await waitFor(() => expect(screen.getAllByRole('button', { name: 'Share report' })[1]).toBeEnabled())
+  fireEvent.click(screen.getAllByRole('button', { name: 'Share report' })[1])
+  await waitFor(() => expect(fetchExport).toHaveBeenCalledWith(expect.stringContaining(`/reports/${saved.id}/export/png`), expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer manager-token' }) })))
+  await waitFor(() => expect(screen.getAllByRole('button', { name: 'Share report' })[1]).toBeEnabled())
+  if (mode === 'fallback') {
+    expect(share).not.toHaveBeenCalled()
+    expect(click).toHaveBeenCalledOnce()
+    expect(screen.getByRole('status')).toHaveTextContent('downloaded for you to attach')
+  } else {
+    expect(share).toHaveBeenCalledWith({ files: [expect.any(File)], title: 'LineTech Shift Report' })
+    expect(click).not.toHaveBeenCalled()
+  }
+  expect(apiClient.post).toHaveBeenCalledTimes(1)
 })

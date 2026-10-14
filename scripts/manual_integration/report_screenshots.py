@@ -152,7 +152,7 @@ def main():
                     'Object.defineProperty(navigator,"canShare",{value:undefined,configurable:true})'
                 )
                 with page.expect_download() as info:
-                    page.get_by_role("button", name="Share image", exact=True).click()
+                    page.get_by_role("button", name="Share report", exact=True).first.click()
                 assert info.value.suggested_filename.endswith(".png")
                 page.get_by_text(
                     "Sharing unavailable on this device.", exact=False
