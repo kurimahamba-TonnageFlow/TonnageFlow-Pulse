@@ -26,7 +26,7 @@ still be released together.
 GET {PULSE_API_BASE_URL}/api/v1/hmi/config
 ```
 
-No authentication required. Returns only **active** lines → machines →
+Requires the existing tablet session (`X-HMI-Session`). Returns only **active** lines → machines →
 buttons - never disabled rows, Management data, or credentials:
 
 ```json

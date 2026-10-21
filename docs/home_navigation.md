@@ -1,6 +1,6 @@
 # Home navigation hub - review build
 
-Implemented in the isolated `feature/linetech-preview` checkout. Not committed, pushed or deployed.
+Implemented on `feature/linetech-preview`. This document retains the original UI review evidence; check Dokploy for the deployed commit.
 
 ## Connected destinations
 
@@ -10,12 +10,13 @@ Implemented in the isolated `feature/linetech-preview` checkout. Not committed, 
 | HMI | `/hmi` | Existing tablet sign-in/device gate |
 | Engineering Workspace | `/engineering` | Existing Engineering sign-in |
 | Management | `/management` | Existing Management sign-in |
+| Reports | `/management/reports` | Existing Management session |
 | Performance | `/management/performance` | Existing Management session |
 | Production | `/dashboard` | Existing Management session |
 | QA | `/dashboard/qa` | Existing Management session |
 | Operational Intelligence | `/dashboard/operational-intelligence` | Existing Management session |
 
-Quick Access and All Destinations share `features/home/navigation.ts`. Cards are single React Router links or buttons, not nested controls. Warehouse (Phase 2), Cleaning Plant (planned), Reports and Settings (under development) have no existing routes and open accessible information dialogs. Notifications also explains its current availability; Search filters actual destinations and Help explains where to work.
+Quick Access and All Destinations share `features/home/navigation.ts`. Cards are single React Router links or buttons, not nested controls. Warehouse (Phase 2), Cleaning Plant (planned) and Settings (under development) have no existing routes and open accessible information dialogs. Notifications also explains its current availability; Search filters actual destinations and Help explains where to work.
 
 ## Authentication and workflows
 

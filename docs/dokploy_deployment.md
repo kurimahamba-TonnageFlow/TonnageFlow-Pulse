@@ -7,7 +7,7 @@ The database remains external. No migrations or data resets run on startup.
 ## Configure
 
 1. Keep Autodeploy off during initial setup. Select the GitHub repository,
-   branch main and Compose Path ./docker-compose.yml, then Save.
+   reviewed branch `feature/linetech-preview` and Compose Path ./docker-compose.yml, then Save. Keep Autodeploy off for manual releases.
 2. In Environment, supply the actual server values below. Keep the existing
    pilot PINs if required; do not put them in GitHub or frontend variables.
 
@@ -42,8 +42,7 @@ using the webhook. Session durations default to 30 minutes.
 
 Keep one API container / worker: authentication sessions and rate limits are
 in memory. A restart signs users out. The web health check checks static serving;
-the API readiness check separately checks the database and schema. No browser
-observer process or Chromium is started by this deployment.
+the API readiness check separately checks the database and schema. No browser observer process is started by this deployment. The API image installs Chromium for on-demand report PDF/PNG exports. Verify both formats after deployment.
 
 For updates, deploy a reviewed commit and retain the previous known-good commit
 for rollback. Do not use Fresh Volumes as a deployment or troubleshooting step.
