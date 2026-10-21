@@ -6,7 +6,7 @@ Pulse is a food-manufacturing application that connects production runs, hourly 
 
 A line can hit its output and still carry unnecessary cost. Pulse starts with reliable production evidence; the wider Tonnage Flow direction connects that evidence to cost per dispatched tonne.
 
-> **Current application branch:** [`feature/linetech-preview`](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/tree/feature/linetech-preview). GitHub's default `main` branch is an older code baseline. This guide describes the current application branch, reviewed on 21 October 2026. Deployment is manual through Dokploy; documentation is not proof of a live deployment.
+> **Current application branch:** [`feature/linetech-preview`](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/tree/feature/linetech-preview). GitHub's default `main` branch is an older code baseline. This guide describes the current application branch, reviewed on 21 October 2026. Deployment is manual through Dokploy; documentation is not proof of a live deployment.
 
 ## What is implemented
 
@@ -120,8 +120,8 @@ Saved report -> HTML -> Playwright Chromium -> PDF / PNG
 Use Python 3.13 and Node.js 22.12+ (Node 24 is also suitable), with PostgreSQL available. The Dockerfiles use Python 3.13 and Node 22.
 
 ```powershell
-git clone --branch feature/linetech-preview https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard.git
-cd whatsapp-oee-dashboard
+git clone --branch feature/linetech-preview https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse.git
+cd TonnageFlow-Pulse
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
