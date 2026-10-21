@@ -6,7 +6,7 @@ Pulse is a food-manufacturing application that connects production runs, hourly 
 
 A line can hit its output and still carry unnecessary cost. Pulse starts with reliable production evidence; the wider Tonnage Flow direction connects that evidence to cost per dispatched tonne.
 
-> **Current application branch:** [`feature/linetech-preview`](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/tree/feature/linetech-preview). GitHub's default `main` branch is an older code baseline. This guide describes the current application branch, reviewed on 21 October 2026. Deployment is manual through Dokploy; documentation is not proof of a live deployment.
+> **Current application branch:** [`feature/linetech-preview`](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/tree/feature/linetech-preview). GitHub's default `main` branch is an older code baseline. This guide describes the current application branch, reviewed on 21 October 2026. Deployment is manual through Dokploy; documentation is not proof of a live deployment.
 
 ## What is implemented
 
@@ -26,9 +26,9 @@ A line can hit its output and still carry unnecessary cost. Pulse starts with re
 
 The image below uses **synthetic demonstration data**, not live factory results.
 
-[![LineTech shift report preview](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/report-preview/linetech.png)](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/report-preview/linetech.pdf)
+[![LineTech shift report preview](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/report-preview/linetech.png)](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/report-preview/linetech.pdf)
 
-[Engineering example](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/report-preview/engineering.png) | [Management example](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/report-preview/management.png) | [Reporting engine guide](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/reporting_engine.md)
+[Engineering example](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/report-preview/engineering.png) | [Management example](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/report-preview/management.png) | [Reporting engine guide](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/reporting_engine.md)
 
 ## How production is recorded
 
@@ -59,7 +59,7 @@ Technicians record the event. Pulse handles conversions, timestamps and calculat
 - Factory boundaries use **Europe/London**: Day 06:00-14:00, Afternoon 14:00-22:00 and Night 22:00-06:00. Charts follow the current shift; unfinished hours remain blank. Clock-change nights retain their actual seven or nine hours.
 - "Running at last report" is recorded HMI evidence, not continuous machine telemetry. Produced tonnes are not dispatched tonnes.
 
-See [standard reconciliation](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/production_standard_reconciliation.md), [line/weight standards](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/line_weight_standards.md) and [operational intelligence boundaries](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/operational_intelligence_redesign.md).
+See [standard reconciliation](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/production_standard_reconciliation.md), [line/weight standards](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/line_weight_standards.md) and [operational intelligence boundaries](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/operational_intelligence_redesign.md).
 
 ## Access and navigation
 
@@ -120,15 +120,15 @@ Saved report -> HTML -> Playwright Chromium -> PDF / PNG
 Use Python 3.13 and Node.js 22.12+ (Node 24 is also suitable), with PostgreSQL available. The Dockerfiles use Python 3.13 and Node 22.
 
 ```powershell
-git clone --branch feature/linetech-preview https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard.git
-cd whatsapp-oee-dashboard
+git clone --branch feature/linetech-preview https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse.git
+cd TonnageFlow-Pulse
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 npm --prefix frontend ci
 ```
 
-Create a local `.env` from [.env.example](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/.env.example) only if you do not already have one. Configure a **development database**, distinct tablet/Engineering/Management secrets and these local origins:
+Create a local `.env` from [.env.example](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/.env.example) only if you do not already have one. Configure a **development database**, distinct tablet/Engineering/Management secrets and these local origins:
 
 ```dotenv
 HMI_ORIGIN=http://localhost:5173
@@ -182,7 +182,7 @@ npm --prefix frontend run lint
 npm --prefix frontend run build
 ```
 
-Selected integration scripts under `scripts/manual_integration/` require an explicitly prepared disposable local database or a running local preview server. Read each script before running it; do not aim integration tests at production. See [report verification](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/reporting_engine.md) for export, role and snapshot checks.
+Selected integration scripts under `scripts/manual_integration/` require an explicitly prepared disposable local database or a running local preview server. Read each script before running it; do not aim integration tests at production. See [report verification](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/reporting_engine.md) for export, role and snapshot checks.
 
 Automated tests do not replace tablet/network acceptance or a deployed PDF/PNG smoke check. Historical test counts in feature documents describe those releases, not a fresh run of the current checkout.
 
@@ -198,7 +198,7 @@ Keep **Dokploy Autodeploy off**. Use the reviewed `feature/linetech-preview` com
 6. Require `/health/ready` to return HTTP 200 with `status: ready`, `database: ok` and an empty `missing_migrations` list. `/health` is liveness only.
 7. Sign in again after restart. Check role access, production views and report PDF/PNG downloads on the intended devices.
 
-The reporting engine requires `20261012232758_shift_report_snapshots.sql`. Consult the full [migrations directory](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/tree/feature/linetech-preview/migrations), the [release gate](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/deployment_release_gate.md) and [Dokploy guide](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/dokploy_deployment.md); do not assume a historical migration list is exhaustive.
+The reporting engine requires `20261012232758_shift_report_snapshots.sql`. Consult the full [migrations directory](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/tree/feature/linetech-preview/migrations), the [release gate](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/deployment_release_gate.md) and [Dokploy guide](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/dokploy_deployment.md); do not assume a historical migration list is exhaustive.
 
 Keep **one API worker and one replica** while sessions and rate limits are process-local. The Compose image invokes Uvicorn directly; `python -m src.serve` provides additional environment validation for direct hosting. Do not expose database credentials or PINs through `VITE_*` variables. Keep the database external and the API behind the web proxy.
 
@@ -220,15 +220,15 @@ Retain the previous known-good image/commit for rollback. Do not use **Fresh Vol
 
 ## Further documentation
 
-- [HMI integration](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/hmi_integration.md) and [LineTech workflow](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/linetech_upgrade.md)
-- [Rovema equipment preset](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/rovema_sheet_setup.md)
-- [Engineering integration](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/engineering_integration.md)
-- [Management integration](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/management_integration.md)
-- [Live Operations](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/live_operations_upgrade.md)
-- [Operational Intelligence](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/operational_intelligence_redesign.md)
-- [Home navigation](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/home_navigation.md)
-- [Hourly production card](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/hourly_card_upgrade.md)
-- [Shift reporting and deployment checks](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/reporting_engine.md)
+- [HMI integration](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/hmi_integration.md) and [LineTech workflow](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/linetech_upgrade.md)
+- [Rovema equipment preset](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/rovema_sheet_setup.md)
+- [Engineering integration](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/engineering_integration.md)
+- [Management integration](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/management_integration.md)
+- [Live Operations](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/live_operations_upgrade.md)
+- [Operational Intelligence](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/operational_intelligence_redesign.md)
+- [Home navigation](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/home_navigation.md)
+- [Hourly production card](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/hourly_card_upgrade.md)
+- [Shift reporting and deployment checks](https://github.com/kurimahamba-TonnageFlow/TonnageFlow-Pulse/blob/feature/linetech-preview/docs/reporting_engine.md)
 
 Some feature documents preserve their original review-stage notes. Use the current code and release verification to establish what is deployed.
 
