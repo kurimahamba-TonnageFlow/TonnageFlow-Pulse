@@ -1,1007 +1,239 @@
 # TonnageFlow Pulse
 
-## Overview
+**See the flow. Understand the loss. Improve the journey of the tonne.**
 
-TonnageFlow Pulse is a factory-floor production intelligence application designed for food manufacturing.
+Pulse is a food-manufacturing application that connects production runs, hourly output, downtime, Engineering response and shift handovers. It turns factory-floor updates into a shared operational record: what was expected, what was produced, where time was lost and what needs attention next.
 
-It captures production activity as it happens and converts simple factory-floor updates into structured operational data.
+A line can hit its output and still carry unnecessary cost. Pulse starts with reliable production evidence; the wider Tonnage Flow direction connects that evidence to cost per dispatched tonne.
 
-Pulse tracks the lifecycle of a Production Run from start to finish, including:
+> **Current application branch:** [`feature/linetech-preview`](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/tree/feature/linetech-preview). GitHub's default `main` branch is an older code baseline. This guide describes the current application branch, reviewed on 21 October 2026. Deployment is manual through Dokploy; documentation is not proof of a live deployment.
 
-- Production setup
-- Expected production
-- Hourly production updates
-- Planned downtime
-- Unplanned downtime
-- Engineering response
-- Production progress
-- Changeovers
-- Overrun
-- Operational events
+## What is implemented
 
-The Production Run is the core object within Pulse.
+| Area | Available workflow |
+| --- | --- |
+| LineTech HMI | Tablet sign-in, line selection, run setup, hourly pallet capture, progress, planned stops, faults, production restoration and handover. |
+| LineTech equipment setup | Management-controlled groups, machines, fault buttons and planned reasons. Rovema has a configurable BV1/BV2 preset. |
+| Engineering workspace | Fault investigation and repair updates, ownership, casepacker readiness and handover. Production restoration and Engineering closure remain separate events. |
+| Changeovers | Product, size and format changes, physical completion, Engineering readiness and QA verification where required. |
+| Management | Lines, machines, buttons, active runs, technician task observations, weekly tonnage targets and versioned production standards by line and pack weight. |
+| Live Operations | Latest recorded line state, last completed-hour output, current-shift charts, weekly tonnes, open issues, downtime and changeover readiness. |
+| Operational Intelligence | Production evidence, recorded loss drivers, priorities, line snapshots and downtime comparisons. Financial metrics are explicitly unavailable Phase 2 placeholders. |
+| Shift reports | LineTech, Engineering and Management templates; saved history, immutable revisions, HTML preview, detailed PDF, compact PNG and device sharing with a download fallback. |
+| Home navigation | Connected destinations with existing sign-in controls. Planned modules are clearly identified rather than presented as working screens. |
 
-Instead of treating each hourly update as an isolated report, Pulse builds a structured operational history of what happened throughout the run.
+### Report preview
 
----
+The image below uses **synthetic demonstration data**, not live factory results.
 
-# The Problem
+[![LineTech shift report preview](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/report-preview/linetech.png)](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/report-preview/linetech.pdf)
 
-Food manufacturing factories generate large amounts of operational information every shift.
+[Engineering example](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/report-preview/engineering.png) | [Management example](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/report-preview/management.png) | [Reporting engine guide](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/reporting_engine.md)
 
-However, much of this information is still captured through:
+## How production is recorded
 
-- Paper records
-- Whiteboards
-- Spreadsheets
-- WhatsApp messages
-- Shift handovers
-- OEE reports
-- Verbal communication
-
-The information exists, but it is often fragmented.
-
-This makes it difficult to understand the actual sequence of events behind production performance.
-
-Traditional reporting can tell management that performance was poor.
-
-Pulse is being designed to help explain:
-
-**What happened?**
-
-**When in the production run did it happen?**
-
-**Was it planned or unplanned?**
-
-**What production was lost?**
-
-**Was engineering required?**
-
-**Was the issue resolved?**
-
-**What effect did the event have on the Production Run?**
-
----
-
-# The Solution
-
-TonnageFlow Pulse creates a digital operational history of each Production Run.
-
-The basic model is:
+The production run connects the line, technician, customer, product, pack configuration and the standard effective when the run starts. Hourly updates and events build its operational history.
 
 ```text
-Production Run
-      │
-      ├── Production Run Started
-      │
-      ├── Hourly Update
-      │
-      ├── Planned Downtime
-      │
-      ├── Unplanned Downtime
-      │
-      ├── Engineering Response
-      │
-      ├── Production Progress
-      │
-      ├── Planned Quantity Complete
-      │
-      ├── Overrun
-      │
-      ├── Changeover
-      │
-      └── Production Run Finished
+Run setup + fixed standard
+          |
+          +-- Hourly production updates
+          +-- Planned stops and unplanned faults
+          +-- Engineering response and repair evidence
+          +-- Changeover, verification and handover
+          |
+          v
+Shared calculations -> Dashboards -> Saved shift reports
 ```
 
-These events can later be stored, analysed and converted into operational intelligence.
+Technicians record the event. Pulse handles conversions, timestamps and calculations. Existing runs retain their standard snapshots when Management changes a standard for future runs.
 
----
+### Calculation boundaries
 
-# Product Philosophy
+- **Actual packs:** reported pallets x the run's cases per pallet x packs per case. Pack weight converts output into tonnes.
+- **Expected packs:** the fixed standard in packs/minute x the applicable scheduled minutes. Partial periods use their actual duration.
+- **Output vs target:** actual packs / expected packs x 100. The Live Operations label "Last-Hour OEE" uses this output-achievement definition and explains it on screen. It is not classical Availability x Performance x Quality OEE.
+- **Estimated OEE:** report paths using the existing OEE engine retain its separate availability, performance and quality definitions, provisional assumptions and input-validation rules. Do not compare differently defined percentages as if they were the same measure.
+- Missing readings are not zero production. Not Scheduled is separate from a breakdown. Above-target percentages remain visible and are flagged for review.
+- Recorded downtime is reconciled to avoid counting overlapping stops twice. Missing packs are not automatically attributed to downtime or assigned a financial value.
+- Factory boundaries use **Europe/London**: Day 06:00-14:00, Afternoon 14:00-22:00 and Night 22:00-06:00. Charts follow the current shift; unfinished hours remain blank. Clock-change nights retain their actual seven or nine hours.
+- "Running at last report" is recorded HMI evidence, not continuous machine telemetry. Produced tonnes are not dispatched tonnes.
 
-Pulse should require the minimum possible effort from the people running the production line.
+See [standard reconciliation](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/production_standard_reconciliation.md), [line/weight standards](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/line_weight_standards.md) and [operational intelligence boundaries](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/operational_intelligence_redesign.md).
 
-The Line Technician should report what happened.
+## Access and navigation
 
-Pulse should handle the structure, calculations and system data.
+Pulse uses separate server-configured tablet, Engineering and Management PINs with session-based API access. Showing a link does not grant permission.
 
-A core principle is:
+| Route | Purpose | Access |
+| --- | --- | --- |
+| `/` | Home and destination navigation | Public navigation |
+| `/hmi` | LineTech production capture and reports | Tablet session |
+| `/engineering` | Engineering workspace and reports | Engineering session |
+| `/management` | Factory configuration | Management session |
+| `/management/linetech` | Equipment groups and reasons | Management session |
+| `/management/production-standards` | Versioned standards | Management session |
+| `/management/weekly-targets` | Weekly tonnage targets | Management session |
+| `/management/performance` | Task and production performance | Management session |
+| `/management/active-runs` | Active run oversight | Management session |
+| `/management/reports` | Saved shift reports | Management session |
+| `/dashboard` | Live Operations and detailed production views | Management session |
+| `/dashboard/engineering` | Engineering dashboard | Management session |
+| `/dashboard/qa` | QA dashboard | Management session |
+| `/dashboard/operational-intelligence` | Production intelligence | Management session |
 
-> **The user reports the event. Pulse owns the data structure and system time.**
+Report permissions are checked on generation, history, retrieval, revision and export:
 
-Technicians should not be required to manually calculate:
+| Signed-in role | LineTech report | Engineering report | Management report |
+| --- | --- | --- | --- |
+| Tablet / LineTech | Yes | No | No |
+| Engineering | Yes | Yes | No |
+| Management | Yes | Yes | Yes |
 
-- Expected production
-- Lost packs
-- Lost production time
-- Run totals
-- Overrun
-- Performance against target
+Saved reports are immutable snapshots. A revision creates another version; it does not overwrite the original. Sharing exports a file through the user's device; it does not create a public report URL or automatically send a WhatsApp message.
 
-Pulse performs these calculations automatically.
-
----
-
-# User Interfaces
-
-Pulse is not dependent on a single communication channel.
-
-The production engine should support multiple interfaces.
+## Architecture
 
 ```text
-                 TonnageFlow Pulse
-                        │
-                 Production Engine
-                        │
-          ┌─────────────┼─────────────┐
-          │             │             │
-     Pulse HMI       Web App      WhatsApp
-      / Tablet                     Integration
-          │             │             │
-          └─────────────┼─────────────┘
-                        │
-                 Production Data
-                        │
-               Operational Database
-                        │
-                 Intelligence Layer
-                        │
-                 Director Dashboard
+React + TypeScript + Vite
+          |
+       Nginx (web)
+          | /api, /health, /webhooks
+       FastAPI (one API worker)
+          |
+       PostgreSQL (external; pilot uses Supabase)
+
+Saved report -> HTML -> Playwright Chromium -> PDF / PNG
 ```
 
-## Pulse HMI / Tablet
+- **Backend:** Python, FastAPI, psycopg and shared production/time calculations.
+- **Frontend:** React, TypeScript, React Router and Vite.
+- **Database:** PostgreSQL, incremental SQL migrations and backend-only credentials.
+- **Exports:** Playwright Chromium installed in the API image; no separate export service.
+- **Delivery:** Docker Compose on Hostinger through Dokploy, HTTPS routing and same-origin API requests.
+- **Tests:** pytest, Vitest, Testing Library and isolated browser/database verification scripts.
 
-The primary factory-floor interface can run on a fixed tablet, touchscreen or industrial computer.
+`src/main.py` is the earlier CLI entry point. The web application uses `src.api:app`. The WhatsApp webhook currently provides verification and acknowledgement; it is not a complete inbound/outbound messaging integration. Browser-observer tools are separate from the Compose services.
 
-This is particularly useful in high-care manufacturing environments where personal mobile phones may not be permitted.
+## Local development
 
-The device can remain within the production area and provide a simple interface for production updates.
+Use Python 3.13 and Node.js 22.12+ (Node 24 is also suitable), with PostgreSQL available. The Dockerfiles use Python 3.13 and Node 22.
 
-## Web Interface
-
-Managers, engineers and other authorised users can interact with Pulse through a browser-based interface.
-
-## WhatsApp Integration
-
-WhatsApp remains a potential input channel.
-
-Where supported by Meta's APIs and suitable for the factory, WhatsApp integration can provide an additional method for submitting Pulse updates.
-
-WhatsApp is therefore an integration channel rather than the foundation of the Pulse architecture.
-
----
-
-# Production Run Lifecycle
-
-## Stage 1 — Start Production Run
-
-At the beginning of a Production Run, the Line Technician enters the production setup.
-
-Example:
-
-```text
-Production Line: Rovema
-Technician: Liam
-Shift: Nights
-
-Customer: Asda
-Product: Basmati Rice
-
-Pack Weight: 1kg
-Packs per Case: 8
-Pack Type: Pillow Pack
-
-Target Speed: 120 packs/min
-
-Cases per Pallet: 220
-
-Pallets Remaining: 54
-
-Previous Run Completed: 38 pallets
+```powershell
+git clone --branch feature/linetech-preview https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard.git
+cd whatsapp-oee-dashboard
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+npm --prefix frontend ci
 ```
 
-This creates the Production Run.
+Create a local `.env` from [.env.example](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/.env.example) only if you do not already have one. Configure a **development database**, distinct tablet/Engineering/Management secrets and these local origins:
 
-Pulse also creates a structured event representing the start of the run.
-
-Example:
-
-```text
-Production Run
-Production Run Started
-Reported by: Liam
+```dotenv
+HMI_ORIGIN=http://localhost:5173
+DASHBOARD_ORIGIN=http://localhost:5173
 ```
 
----
+Keep the frontend API base URL unset for the Vite same-origin proxy, which forwards `/api` and `/health` to `127.0.0.1:8000`. If using a different frontend origin, configure the exact matching backend origins.
 
-# Stage 2 — Production Model
+**Database prerequisite:** migrations are incremental and some depend on pre-existing application tables and PostgreSQL roles. They are not a one-command empty-database bootstrap. Use a prepared development schema or an authorised isolated restore, review the migration prerequisites, then apply only missing migrations in order. No migration or data reset runs at app startup.
 
-Pulse calculates the theoretical production capability of the run.
+Start the backend from the repository root:
 
-Using:
-
-```text
-Target Speed = 120 packs/min
-Packs per Case = 8
-Cases per Pallet = 220
+```powershell
+python -m src.serve
 ```
 
-Pulse calculates:
+In a second terminal, start the frontend:
 
-```text
-Expected Packs per Hour = 7,200
-
-Expected Cases per Hour = 900
-
-Expected Pallets per Hour = 4.09
+```powershell
+npm --prefix frontend run dev
 ```
 
-This creates an independent production model against which actual production can be compared.
+Open `http://localhost:5173`. The validated backend launcher requires three distinct secrets of at least 12 characters. Never use production data or credentials for casual demos.
 
----
+For local PDF/PNG exports, install the matching browser once:
 
-# Stage 3 — Production Measurement Window
-
-For the current MVP, each hourly update represents a 60-minute production measurement window.
-
-Pulse compares theoretical production during that period against reported actual production.
-
-Future HMI versions can automatically manage the production timer and submission windows.
-
-The Line Technician should not need to manually manage timestamps.
-
----
-
-# Stage 4 — Hourly Production Update
-
-The Line Technician provides a simple hourly update.
-
-Example:
-
-```text
-OEE: 75%
-
-Pallets Completed This Hour: 3
-
-Planned Downtime:
-Film Change
-
-Unplanned Downtime:
-None
+```powershell
+python -m playwright install chromium
 ```
 
-Pulse then calculates the production performance for that period.
+Linux hosts also need Chromium system libraries; the API Dockerfile installs them with `--with-deps`.
 
-Example:
+### Synthetic previews
 
-```text
-Expected Packs: 7,200
+With Vite running, these local-only entry points use sample data:
 
-Actual Packs: 5,280
+- `/linetech-preview.html` - HMI scenarios, with some actions represented by placeholders.
+- `/live-preview.html` - Live Operations examples.
+- `/intelligence-preview.html` - Operational Intelligence examples.
 
-Lost Packs: 1,920
+Preview entries are separate from the production build entry point. Screenshots under `docs/*-preview/` are review artifacts, not operational evidence.
 
-Estimated Lost Production Time:
-16 minutes
+## Validation
+
+Run from the repository root:
+
+```powershell
+python -m pytest -q
+npm --prefix frontend test
+npm --prefix frontend run lint
+npm --prefix frontend run build
 ```
 
-Pulse also updates the Production Run.
+Selected integration scripts under `scripts/manual_integration/` require an explicitly prepared disposable local database or a running local preview server. Read each script before running it; do not aim integration tests at production. See [report verification](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/reporting_engine.md) for export, role and snapshot checks.
 
-Example:
+Automated tests do not replace tablet/network acceptance or a deployed PDF/PNG smoke check. Historical test counts in feature documents describe those releases, not a fresh run of the current checkout.
 
-```text
-Planned Pallets Completed: 7
+## Manual deployment
 
-Pallets Remaining: 47
-```
+Keep **Dokploy Autodeploy off**. Use the reviewed `feature/linetech-preview` commit and `./docker-compose.yml`.
 
----
+1. Review the commit and check whether it introduces migrations.
+2. Before database changes, take a fresh backup and prove recovery in an isolated database.
+3. Apply only the required, unapplied migrations to the intended database.
+4. Configure server-only `DATABASE_URL`, `MANAGEMENT_PIN`, `ENGINEERING_PIN`, `HMI_DEVICE_PIN` and `PULSE_ORIGIN` in Dokploy.
+5. Deploy API and web from the same revision. Rebuild the API image when browser/system dependencies change.
+6. Require `/health/ready` to return HTTP 200 with `status: ready`, `database: ok` and an empty `missing_migrations` list. `/health` is liveness only.
+7. Sign in again after restart. Check role access, production views and report PDF/PNG downloads on the intended devices.
 
-# Reported OEE vs Calculated Production Performance
+The reporting engine requires `20261012232758_shift_report_snapshots.sql`. Consult the full [migrations directory](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/tree/feature/linetech-preview/migrations), the [release gate](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/deployment_release_gate.md) and [Dokploy guide](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/dokploy_deployment.md); do not assume a historical migration list is exhaustive.
 
-Pulse currently allows factories to record OEE because it is an established manufacturing measure.
+Keep **one API worker and one replica** while sessions and rate limits are process-local. The Compose image invokes Uvicorn directly; `python -m src.serve` provides additional environment validation for direct hosting. Do not expose database credentials or PINs through `VITE_*` variables. Keep the database external and the API behind the web proxy.
 
-However:
+Retain the previous known-good image/commit for rollback. Do not use **Fresh Volumes**, delete report history or restore an entire database as a routine UI rollback.
 
-```text
-Reported OEE
-      ≠
-Calculated Production Performance
-```
+## Repository map
 
-Pulse independently calculates production performance using:
+| Path | Contents |
+| --- | --- |
+| `src/` | API routes, authentication, calculations, persistence, reporting and CLI/integration code |
+| `frontend/src/features/` | HMI, Engineering, Management, Home and dashboard/report UI |
+| `frontend/preview/` | Local synthetic preview fixtures |
+| `migrations/` | Reviewed incremental SQL changes |
+| `deploy/`, `docker-compose.yml` | API/web images, reverse proxy and services |
+| `tests/` | Backend regression tests |
+| `scripts/manual_integration/` | Database/browser acceptance and preview tools |
+| `scripts/production_config/` | Controlled configuration utilities; inspect their dry-run options |
+| `docs/` | Feature contracts, release procedures and synthetic visual evidence |
 
-```text
-Target Production
-        ↓
-Expected Output
-        ↓
-Actual Output
-        ↓
-Lost Output
-        ↓
-Estimated Lost Production Time
-        ↓
-Operational Reason
-```
+## Further documentation
 
-This allows Pulse to retain OEE while developing a more detailed view of production loss.
+- [HMI integration](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/hmi_integration.md) and [LineTech workflow](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/linetech_upgrade.md)
+- [Rovema equipment preset](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/rovema_sheet_setup.md)
+- [Engineering integration](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/engineering_integration.md)
+- [Management integration](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/management_integration.md)
+- [Live Operations](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/live_operations_upgrade.md)
+- [Operational Intelligence](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/operational_intelligence_redesign.md)
+- [Home navigation](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/home_navigation.md)
+- [Hourly production card](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/hourly_card_upgrade.md)
+- [Shift reporting and deployment checks](https://github.com/kurimahamba-TonnageFlow/whatsapp-oee-dashboard/blob/feature/linetech-preview/docs/reporting_engine.md)
 
----
+Some feature documents preserve their original review-stage notes. Use the current code and release verification to establish what is deployed.
 
-# Stage 5 — Planned Downtime
+## Scope and direction
 
-Current planned downtime categories include:
+Warehouse, Cleaning Plant and general Settings are not complete operational modules. Financial intelligence, confirmed recoverable loss, cost per dispatched tonne and upstream/downstream material tracking require additional evidence and implementation. Current packaging output is not a substitute for intake or dispatch measurements.
 
-```text
-Label Change
-Film Change
-CCP Check
-Changeover
-```
-
-These are expected operational events.
-
-Example:
-
-```text
-Planned Downtime
-|
-Film Change
-|
-Reported by: Line Technician
-```
-
-Planned downtime remains visible within the operational history of the Production Run.
-
----
-
-# Stage 6 — Unplanned Downtime
-
-Any other production stoppage is currently treated as unplanned downtime unless configured otherwise.
-
-Examples:
-
-```text
-Casepacker Jam
-
-Conveyor Stop
-
-Machine Fault
-
-Sensor Fault
-
-Product Blockage
-```
-
-An unplanned event becomes part of the Production Run history.
-
-Example:
-
-```text
-Unplanned Downtime
-|
-Casepacker Jam
-|
-Reported by: Liam
-```
-
-If engineering assistance is required, the engineering workflow begins.
-
----
-
-# Engineering Response Workflow
-
-Engineering should only enter the Pulse workflow when required.
-
-The Line Technician owns the initial production event.
-
-The Engineer owns the technical investigation and resolution.
-
-The intended workflow is:
-
-```text
-Unplanned Downtime
-        │
-        ↓
-Technician Reports Fault
-        │
-        ↓
-Engineer Called
-        │
-        ↓
-Engineering Event Open
-        │
-        ↓
-Engineer Responds
-        │
-        ↓
-Investigating
-        │
-        ↓
-Finding / Action Recorded
-        │
-        ↓
-Resolved or Ongoing
-        │
-        ↓
-Production Resumes
-```
-
-Example technician event:
-
-```text
-Unplanned Downtime
-Casepacker Jam
-Reported by: Liam
-```
-
-Followed by:
-
-```text
-Engineering
-Engineer Called
-Reported by: Liam
-```
-
-Future engineering events could include:
-
-```text
-Engineering
-Investigating Casepacker Jam
-Reported by: Aaron
-```
-
-and:
-
-```text
-Engineering
-Casepacker Fault Resolved
-Reported by: Aaron
-```
-
-This separates the production report from the engineering verification.
-
----
-
-# Stage 7 — Production Run Progress
-
-Pulse continuously tracks the planned quantity remaining.
-
-Example:
-
-```text
-Starting Pallets Remaining:
-54
-
-Hour 1:
-4 completed
-50 remaining
-
-Hour 2:
-3 completed
-47 remaining
-```
-
-The Production Run does not automatically finish when planned quantity reaches zero.
-
-The run remains active until the Line Technician confirms that production has finished.
-
----
-
-# Planned Quantity Complete
-
-When:
-
-```text
-Pallets Remaining = 0
-```
-
-Pulse reports:
-
-```text
-Planned quantity complete.
-```
-
-Pulse then asks:
-
-```text
-Is the Production Run finished?
-```
-
-If the answer is:
-
-```text
-No
-```
-
-the Production Run remains active.
-
-Any additional pallets are separated from normal planned production.
-
----
-
-# Potential Overrun
-
-Production may continue after planned quantity reaches zero.
-
-For example:
-
-```text
-Planned Quantity:
-3 pallets
-
-Planned Pallets Completed:
-3
-
-Additional Pallets Produced:
-2
-```
-
-Pulse records:
-
-```text
-Potential Overrun:
-2 pallets
-```
-
-These pallets are not automatically added to normal planned production.
-
----
-
-# Product Changeover
-
-If the next run uses a different product, additional pallets may be produced while emptying the remaining product from the system.
-
-In this situation:
-
-```text
-Potential Overrun
-        ↓
-Product Changeover
-        ↓
-Confirmed Overrun
-```
-
-Example:
-
-```text
-Planned Pallets Completed: 3
-
-Potential Overrun: 2
-
-Confirmed Overrun: 2
-```
-
----
-
-# Customer Changeover
-
-A customer changeover may occur while the same product continues.
-
-Example:
-
-```text
-Asda Basmati
-      ↓
-Customer Changeover
-      ↓
-Tesco Basmati
-```
-
-Because the product remains the same, the system does not necessarily need to be emptied.
-
-Therefore potential extra pallets are not automatically confirmed as product overrun.
-
-Pulse records:
-
-```text
-Confirmed Overrun: 0
-```
-
----
-
-# Production Run Completion
-
-When the Line Technician confirms the Production Run is finished, Pulse closes the run.
-
-Example:
-
-```text
-=== Production Run Closed ===
-
-Planned Pallets Completed:
-3
-
-Potential Overrun Pallets:
-2
-
-Confirmed Overrun Pallets:
-2
-```
-
-Pulse also records:
-
-```text
-Production Run
-Production Run Finished
-Reported by: Liam
-```
-
----
-
-# Operational Event Model
-
-Pulse stores operational activity as structured events.
-
-Instead of storing only:
-
-```text
-Casepacker Jam
-```
-
-Pulse can store:
-
-```python
-{
-    "event_type": "Unplanned Downtime",
-    "reason": "Casepacker Jam",
-    "reported_by": "Liam",
-}
-```
-
-Current event families include:
-
-```text
-Production Run
-
-Hourly Update
-
-Planned Downtime
-
-Unplanned Downtime
-
-Engineering
-
-Changeover
-```
-
-A Production Run therefore becomes a container containing a sequence of operational events.
-
-Example:
-
-```text
-Production Run | Production Run Started | Reported by: Liam
-
-Hourly Update | Hourly Update Received | Reported by: Liam
-
-Planned Downtime | Film Change | Reported by: Liam
-
-Hourly Update | Hourly Update Received | Reported by: Liam
-
-Unplanned Downtime | Casepacker Jam | Reported by: Liam
-
-Engineering | Engineer Called | Reported by: Liam
-
-Production Run | Production Run Finished | Reported by: Liam
-
-Changeover | Product Changeover | Reported by: Liam
-```
-
-This structured event history will become the foundation for the Pulse operational intelligence layer.
-
----
-
-# System Time
-
-Pulse should eventually record system timestamps automatically when events are submitted through the HMI, web interface or supported integrations.
-
-The user should not normally be required to enter timestamps manually.
-
-The principle is:
-
-> **Users report events. Pulse records system time.**
-
-Future versions may support retrospective event reporting where an estimated event time can optionally be supplied.
-
----
-
-# Factory Roles
-
-## Line Technician
-
-The Line Technician is the primary factory-floor Pulse user.
-
-Responsibilities include:
-
-- Start Production Run
-- Confirm production setup
-- Submit hourly updates
-- Report planned downtime
-- Report unplanned downtime
-- Request engineering support
-- Confirm planned quantity completion
-- Confirm Production Run completion
-
-The Line Technician owns production reporting.
-
----
-
-## Engineer
-
-Engineers enter the workflow when technical support is required.
-
-Responsibilities include:
-
-- Respond to unplanned downtime
-- Accept engineering events
-- Record investigation
-- Record technical findings
-- Record corrective action
-- Mark fault as resolved or ongoing
-
-The Engineer owns engineering verification.
-
----
-
-## Manager
-
-Managers are responsible for production planning and operational coordination.
-
-Future Pulse functions may include:
-
-- Production planning
-- Run priorities
-- Line allocation
-- Labour allocation
-- Delegation
-- Production exceptions
-- Changeover planning
-
----
-
-## Director
-
-Directors consume the operational intelligence created by Pulse.
-
-The Director should not need to read individual factory-floor messages.
-
-Pulse should convert production activity into information such as:
-
-- Production performance
-- Production volatility
-- Lost production
-- Planned downtime
-- Unplanned downtime
-- Engineering response
-- Recurring faults
-- Run performance
-- Changeover performance
-- Overrun
-- Operational Drag
-- Cost per Tonne impact
-
----
-
-# Core Business Objects
-
-Pulse is being designed around structured business objects.
-
-Current and planned objects include:
-
-```text
-Production Run
-
-Production Event
-
-Hourly Update
-
-Downtime Event
-
-Engineering Event
-
-Changeover
-
-Production Performance
-
-Production Line
-
-Product
-
-Customer
-
-Shift
-
-Line Technician
-
-Engineer
-```
-
-The Production Run acts as the main container.
-
-Production Events describe what happened during that run.
-
----
-
-# Current Production Lines
-
-The current prototype contains:
-
-```text
-Rovema
-GIC
-Guill
-```
-
-Each line currently has four placeholder Line Technician records.
-
----
-
-# Current Planned Downtime Rules
-
-The current prototype classifies the following as planned downtime:
-
-```text
-Label Change
-Film Change
-CCP Check
-Changeover
-```
-
-Other stoppages are treated as unplanned unless configured otherwise.
-
----
-
-# Technology Direction
-
-The current prototype is being developed in Python.
-
-The terminal interface is temporary and is being used to build and test the production engine before introducing the graphical interface.
-
-The intended architecture is:
-
-```text
-Factory Interface
-       │
-       ↓
-Pulse HMI / Web Application
-       │
-       ↓
-API Layer
-       │
-       ↓
-Python Production Engine
-       │
-       ↓
-Operational Database
-       │
-       ↓
-Operational Intelligence
-       │
-       ↓
-Director Dashboard
-```
-
-Potential technologies include:
-
-```text
-Python
-
-FastAPI
-
-SQL Database
-
-Browser-based HMI
-
-Progressive Web Application (PWA)
-
-Power BI / Pulse Dashboard
-
-AI / Operational Intelligence Layer
-```
-
-The architecture should allow additional communication channels, including WhatsApp, to connect to the same production engine.
-
----
-
-# Current Development Status
-
-The current Python prototype can:
-
-- Start a Production Run
-- Capture production setup
-- Calculate theoretical hourly output
-- Capture hourly updates
-- Calculate actual production
-- Estimate lost packs
-- Estimate lost production time
-- Track planned pallets completed
-- Track pallets remaining
-- Record planned downtime
-- Record unplanned downtime
-- Record engineer-called events
-- Store structured operational events
-- Continue a run after planned quantity reaches zero
-- Separate potential overrun from planned production
-- Confirm overrun during Product Changeover
-- Handle Customer Changeover
-- Close a Production Run
-- Start another Production Run
-- Close the Pulse session
-
----
-
-# Development Roadmap
-
-## Current Phase
-
-Build and validate the core Production Run engine.
-
-## Next Phase
-
-Engineering response workflow:
-
-```text
-Unplanned Downtime
-        ↓
-Engineer Called
-        ↓
-Engineer Responds
-        ↓
-Investigating
-        ↓
-Finding / Action
-        ↓
-Resolved / Ongoing
-```
-
-## Future Phases
-
-- Data persistence
-- Automatic system timestamps
-- Production Run history
-- Shift summaries
-- Factory HMI
-- Tablet interface
-- User authentication
-- Role-based interfaces
-- Manager workflows
-- Director dashboard
-- Operational Drag analysis
-- Cost per Tonne intelligence
-- AI operational analysis
-- Optional WhatsApp integration
-
----
-
-# Long-Term Direction
-
-TonnageFlow Pulse is intended to become more than an OEE data-entry tool.
-
-The long-term goal is to create a structured digital history of what actually happened during production.
-
-Instead of relying on disconnected spreadsheets, messages and reports, Pulse can create a sequence of operational events for every Production Run.
-
-That creates the foundation for TonnageFlow to analyse:
-
-```text
-What was planned?
-
-What actually happened?
-
-Where was production lost?
-
-Why was it lost?
-
-What intervention occurred?
-
-Was the issue resolved?
-
-How predictable was the run?
-
-What Operational Drag was created?
-
-What was the impact on Cost per Tonne?
-```
-
-The objective is to turn factory-floor activity into operational intelligence that helps manufacturing teams improve production stability, predictability and profitability.
+Pulse provides production visibility. RunSafe is the wider verification-and-control direction, not a module implemented here. The aim is one connected view of the tonne from intake to dispatch, built by proving narrow operational use cases first.
