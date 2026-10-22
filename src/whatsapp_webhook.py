@@ -37,6 +37,15 @@ app = FastAPI(title="TonnageFlow Pulse WhatsApp Webhook")
 # ==========================================================
 
 
+@app.get("/")
+def root():
+    return {
+        "status": "ok",
+        "service": "TonnageFlow Pulse API",
+        "version": "1.0.0",
+    }
+
+
 @app.get("/health")
 def health():
     return {
